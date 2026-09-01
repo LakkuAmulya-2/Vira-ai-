@@ -1,13 +1,4 @@
 from typing import Annotated,TypedDict
 from langgraph.graph.message import add_messages
 class ViraAgentState(TypedDict,total=False):
-    messages:Annotated[list,add_messages]
-    request:dict
-    user_id:str
-    conversation_id:str|None
-    plan:dict
-    tasks:list[dict]
-    task_index:int
-    results:list[dict]
-    final:dict
-    error:str|None
+ messages:Annotated[list,add_messages];request:dict;user_id:str;conversation_id:str|None;plan:dict;tasks:list[dict];task_index:int;results:list[dict];evidence:list[dict];requires_human_review:bool;human_approved:bool;final:dict;error:str|None;trace:list[dict]

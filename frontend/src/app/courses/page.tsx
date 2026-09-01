@@ -1,0 +1,2 @@
+import {Explorer} from "../../components/Explorer";import {AppSidebar} from "../../components/AppSidebar";
+export default function Page(){return <div className="workspace-shell"><AppSidebar/><Explorer title="Explore courses, not labels." subtitle="Compare programs by what you learn, prerequisites, outcomes and how they fit your direction." endpoint="/api/v1/agents/run" placeholder="e.g. emerging AI courses after 12th with maths" empty="Ask about established, emerging or interdisciplinary programs."/></div>}

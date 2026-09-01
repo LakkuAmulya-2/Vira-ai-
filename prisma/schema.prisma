@@ -1,0 +1,153 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole { STUDENT PARENT COUNSELOR ADMIN }
+enum EducationStage { AFTER_10 AFTER_12 UNDERGRADUATE OTHER }
+enum VerificationStatus { UNVERIFIED PENDING VERIFIED EXPIRED REJECTED }
+enum Gender { FEMALE MALE NON_BINARY PREFER_NOT_TO_SAY }
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(STUDENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  student       StudentProfile?
+  auditLogs     AuditLog[]
+}
+
+model StudentProfile {
+  id                    String         @id @default(cuid())
+  userId                String         @unique
+  user                  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dateOfBirth           DateTime?
+  gender                Gender?
+  countryCode           String         @db.VarChar(2)
+  state                 String?
+  city                  String?
+  educationStage        EducationStage
+  preferredCountries    String[]
+  preferredLanguages    String[]
+  budgetCurrency        String?        @db.VarChar(3)
+  annualBudgetMinor     BigInt?
+  onboardingCompletedAt DateTime?
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+  academicRecords       AcademicRecord[]
+  interests             StudentInterest[]
+  skills                StudentSkill[]
+  goals                 CareerGoal[]
+}
+
+model AcademicRecord {
+  id          String   @id @default(cuid())
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  level       String
+  board       String?
+  institution String?
+  percentage  Decimal? @db.Decimal(5,2)
+  score       Decimal? @db.Decimal(10,2)
+  maxScore    Decimal? @db.Decimal(10,2)
+  completedAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([studentId, level])
+}
+
+model StudentInterest {
+  id        String   @id @default(cuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  name      String
+  weight    Int      @default(1)
+  createdAt DateTime @default(now())
+  @@unique([studentId, name])
+}
+
+model StudentSkill {
+  id        String   @id @default(cuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  name      String
+  proficiency Int?
+  createdAt DateTime @default(now())
+  @@unique([studentId, name])
+}
+
+model CareerGoal {
+  id        String   @id @default(cuid())
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  title     String
+  priority  Int      @default(1)
+  createdAt DateTime @default(now())
+  @@unique([studentId, title])
+}
+
+model DataSource {
+  id                 String             @id @default(cuid())
+  name               String
+  url                String             @unique
+  jurisdiction       String?
+  verificationStatus VerificationStatus @default(PENDING)
+  lastVerifiedAt     DateTime?
+  validUntil         DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  resource  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+  @@index([actorId, createdAt])
+}
+
+model Account {
+  id                String @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  @@unique([identifier, token])
+}

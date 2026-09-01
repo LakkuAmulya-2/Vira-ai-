@@ -24,7 +24,6 @@ class SupervisorAgent:
     def plan(self, request: AgentRequest) -> AgentPlan:
         text = request.message.lower()
         allowed = set(request.allowed_agents or list(self._agents))
-
         rules = [
             (("scholarship", "funding", "financial aid"), AgentName.SCHOLARSHIP),
             (("admission", "apply", "application"), AgentName.ADMISSIONS),
@@ -37,17 +36,17 @@ class SupervisorAgent:
             if any(keyword in text for keyword in keywords):
                 selected = agent
                 break
-
         if selected not in allowed:
             raise PermissionError("Requested agent is not allowed for this execution")
-
         support = [AgentName.CAREER] if selected == AgentName.RECOMMENDATION else []
         return AgentPlan(primary_agent=selected, supporting_agents=support, reason="policy-based routing")
 
+    async def run_agent(self, name: AgentName, request: AgentRequest) -> AgentResult:
+        agent = self._agents.get(name)
+        if agent is None:
+            raise PermissionError(f"Unknown agent: {name}")
+        return await agent.run(request.message, request.user_id)
+
     async def run(self, request: AgentRequest) -> list[AgentResult]:
         plan = self.plan(request)
-        results: list[AgentResult] = []
-        for name in [*plan.supporting_agents, plan.primary_agent]:
-            agent = self._agents[name]
-            results.append(await agent.run(request.message, request.user_id))
-        return results
+        return [await self.run_agent(name, request) for name in [*plan.supporting_agents, plan.primary_agent]]

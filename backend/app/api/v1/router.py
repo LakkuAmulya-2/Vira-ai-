@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1.routes import admissions, agents, career, chat, college_matching, connectors, education, ingestion, jobs, journey, knowledge, recommendations, scholarships, sources, student_intelligence, students, tool_search, workflows
+from app.api.v1.routes import admissions, agents, career, chat, college_matching, connectors, data_ingestion, education, ingestion, jobs, journey, knowledge, recommendations, scholarships, sources, student_intelligence, students, tool_search, workflows
 api_router=APIRouter()
 api_router.include_router(students.router,prefix="/students",tags=["students"])
 api_router.include_router(student_intelligence.router,prefix="/student-intelligence",tags=["student-intelligence"])
@@ -15,6 +15,7 @@ api_router.include_router(sources.router,prefix="/sources",tags=["knowledge-sour
 api_router.include_router(connectors.router,prefix="/connectors",tags=["connectors"])
 api_router.include_router(jobs.router,prefix="/jobs",tags=["jobs"])
 api_router.include_router(ingestion.router,prefix="/ingestion",tags=["ingestion"])
+api_router.include_router(data_ingestion.router,prefix="/data-ingestion",tags=["data-ingestion"])
 api_router.include_router(recommendations.router,prefix="/recommendations",tags=["recommendations"])
 api_router.include_router(agents.router,prefix="/agents",tags=["agents"])
 api_router.include_router(journey.router,prefix="/journey",tags=["journey"])

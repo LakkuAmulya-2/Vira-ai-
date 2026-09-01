@@ -1,0 +1,2 @@
+import {Explorer} from "../../components/Explorer";import {AppSidebar} from "../../components/AppSidebar";
+export default function Page(){return <div className="workspace-shell"><AppSidebar/><Explorer title="Know what you need to prepare for." subtitle="Understand entrance, language and standardized exam requirements without guessing." endpoint="/api/v1/agents/run" placeholder="e.g. exams required for engineering in Germany after 12th" empty="Search requirements by course, destination or intake."/></div>

@@ -12,6 +12,10 @@ enum UserRole { STUDENT PARENT COUNSELOR ADMIN }
 enum EducationStage { AFTER_10 AFTER_12 UNDERGRADUATE OTHER }
 enum VerificationStatus { UNVERIFIED PENDING VERIFIED EXPIRED REJECTED }
 enum Gender { FEMALE MALE NON_BINARY PREFER_NOT_TO_SAY }
+enum SourceType { GOVERNMENT UNIVERSITY INSTITUTION EXAM_BODY SCHOLARSHIP_PROVIDER REGULATOR OTHER }
+enum KnowledgeEntityType { CAREER COURSE COLLEGE PROGRAM EXAM SCHOLARSHIP ELIGIBILITY_RULE DEADLINE }
+enum PublicationStatus { DRAFT PUBLISHED ARCHIVED }
+enum DegreeLevel { CERTIFICATE DIPLOMA ASSOCIATE BACHELOR MASTER DOCTORATE OTHER }
 
 model User {
   id            String    @id @default(cuid())
@@ -78,12 +82,12 @@ model StudentInterest {
 }
 
 model StudentSkill {
-  id        String   @id @default(cuid())
-  studentId String
-  student   StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  name      String
+  id          String   @id @default(cuid())
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  name        String
   proficiency Int?
-  createdAt DateTime @default(now())
+  createdAt   DateTime @default(now())
   @@unique([studentId, name])
 }
 
@@ -100,13 +104,146 @@ model CareerGoal {
 model DataSource {
   id                 String             @id @default(cuid())
   name               String
-  url                String             @unique
+  baseUrl            String             @unique
+  sourceType         SourceType
+  countryCode        String?            @db.VarChar(2)
   jurisdiction       String?
   verificationStatus VerificationStatus @default(PENDING)
   lastVerifiedAt     DateTime?
   validUntil         DateTime?
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
+  documents          SourceDocument[]
+  claims             KnowledgeClaim[]
+}
+
+model SourceDocument {
+  id             String             @id @default(cuid())
+  sourceId       String
+  source         DataSource         @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  url            String             @unique
+  title          String?
+  contentHash    String?
+  fetchedAt      DateTime?
+  publishedAt    DateTime?
+  effectiveFrom  DateTime?
+  effectiveUntil DateTime?
+  status         VerificationStatus @default(PENDING)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  claims         KnowledgeClaim[]
+  @@index([sourceId, status])
+}
+
+model KnowledgeClaim {
+  id             String              @id @default(cuid())
+  entityType     KnowledgeEntityType
+  entityKey      String
+  field          String
+  value          Json
+  sourceId       String
+  source         DataSource          @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  documentId     String?
+  document       SourceDocument?     @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  jurisdiction   String?
+  countryCode    String?             @db.VarChar(2)
+  effectiveFrom  DateTime?
+  effectiveUntil DateTime?
+  status         VerificationStatus  @default(PENDING)
+  verifiedAt     DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  @@index([entityType, entityKey, status])
+  @@index([effectiveUntil, status])
+}
+
+model Career {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  status          PublicationStatus @default(DRAFT)
+  name            String
+  summary         String?
+  countryCode     String?           @db.VarChar(2)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  pathways        CareerCourse[]
+}
+
+model Course {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  status          PublicationStatus @default(DRAFT)
+  name            String
+  degreeLevel     DegreeLevel?
+  field           String?
+  durationMonths  Int?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  careers         CareerCourse[]
+  programs        Program[]
+}
+
+model CareerCourse {
+  careerId String
+  courseId String
+  career   Career @relation(fields: [careerId], references: [id], onDelete: Cascade)
+  course   Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  @@id([careerId, courseId])
+}
+
+model College {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  status          PublicationStatus @default(DRAFT)
+  name            String
+  countryCode     String            @db.VarChar(2)
+  state           String?
+  city            String?
+  website         String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  programs        Program[]
+}
+
+model Program {
+  id              String            @id @default(cuid())
+  collegeId       String
+  courseId        String
+  status          PublicationStatus @default(DRAFT)
+  officialName    String
+  durationMonths  Int?
+  currency        String?           @db.VarChar(3)
+  tuitionMinor    BigInt?
+  college         College           @relation(fields: [collegeId], references: [id], onDelete: Cascade)
+  course          Course            @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  @@unique([collegeId, officialName])
+}
+
+model EntranceExam {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  status          PublicationStatus @default(DRAFT)
+  name            String
+  countryCode     String            @db.VarChar(2)
+  officialUrl     String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+model Scholarship {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  status          PublicationStatus @default(DRAFT)
+  name            String
+  providerName    String
+  countryCode     String            @db.VarChar(2)
+  officialUrl     String?
+  currency        String?           @db.VarChar(3)
+  awardMinor      BigInt?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 }
 
 model AuditLog {

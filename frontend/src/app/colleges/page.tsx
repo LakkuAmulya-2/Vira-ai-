@@ -1,0 +1,2 @@
+import {Explorer} from "../../components/Explorer";import {AppSidebar} from "../../components/AppSidebar";
+export default function Page(){return <div className="workspace-shell"><AppSidebar/><Explorer title="Find colleges that fit reality." subtitle="Explore institutions through eligibility, affordability, location, outcomes and verified requirements." endpoint="/api/v1/agents/run" placeholder="e.g. affordable CS universities in Germany for international students" empty="Search by course, country, budget or admission constraints."/></div>}

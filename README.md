@@ -1,172 +1,130 @@
 # Vira AI
 
-> **The AI-native Student Decision & Autonomous Admissions Operating System.**
+> **AI-native Student Decision & Autonomous Admissions Operating System.**
 
 Vira AI helps students move from **confusion → clarity → decision → action → outcome**.
 
-## What Vira solves
+## Production architecture
 
-- **Career confusion** — personalized career matching and explainable fit.
-- **Hidden opportunities** — discover niche careers and courses students may never know exist.
-- **Course discovery** — traditional, emerging, vocational and interdisciplinary pathways.
-- **Entrance intelligence** — eligibility, exam priorities and deadline tracking.
-- **College intelligence** — Dream / Target / Safe recommendations based on fit, budget and constraints.
-- **Scholarship intelligence** — profile-based eligibility matching and renewal/deadline tracking.
-- **Autonomous admissions** — monitor → detect → recommend → prepare → ask approval → act → audit.
+```
+Next.js Web / Mobile Clients
+            │
+            ▼
+       FastAPI Backend
+            │
+   ┌────────┼─────────┐
+   ▼        ▼         ▼
+Postgres   Redis   AI Orchestration
+            │
+            ▼
+   Verified Education Knowledge
+```
 
-> Vira never silently submits applications or makes legal/financial commitments without explicit user approval.
+### Backend authority
 
-## Product principles
+FastAPI is the authoritative backend for:
 
-1. **Decision, not information overload** — answer “What should I do next?”
-2. **AI-native, not AI-added** — AI is embedded in discovery, reasoning and proactive workflows.
-3. **Grounded critical facts** — eligibility, fees, deadlines and requirements come from verified data.
-4. **Explainable recommendations** — show score, reasons, constraints, trade-offs and freshness.
+- authentication boundary and RBAC
+- student profiles
+- education knowledge
+- verified sources and claims
+- recommendation engine
+- admissions workflows
+- scholarships and deadlines
+- audit trails
+- background jobs
 
-## MVP
+The frontend must not own business-domain persistence.
+
+## Core product flow
 
 ```
 Student Profile
    ↓
 Academic + Interest Intelligence
    ↓
-Career Matches + Hidden Opportunities
+Verified Knowledge Retrieval
    ↓
-Course Pathways
+Hard Eligibility Filters
    ↓
-Eligible Entrance Exams
+Deterministic Ranking
    ↓
-College Shortlist
+AI Explanation
    ↓
-Scholarship Matches
-   ↓
-Next Best Actions
+Next Best Action
 ```
-
-### V1 includes
-- Authentication and RBAC
-- Student onboarding and intelligence profile
-- Career discovery
-- Hidden course/career discovery
-- Hybrid recommendation engine
-- Entrance eligibility
-- College shortlist
-- Scholarship matching
-- AI copilot with grounded context
-- Deadline notifications
-
-### Not V1
-- Fully automatic application submission
-- Unverified data presented as authoritative
-- Premature microservices
-- Global expansion before the India workflow is reliable
 
 ## Production stack
 
-| Layer | Choice |
+| Layer | Technology |
 |---|---|
-| Web | Next.js + React + TypeScript |
-| Styling | Tailwind CSS + accessible primitives |
+| Frontend | Next.js + React + TypeScript |
+| Backend | FastAPI + Python |
 | Database | PostgreSQL |
-| ORM | Prisma |
-| Validation | Zod |
-| Auth | Auth.js or equivalent |
-| Cache / Jobs | Redis + queue worker |
-| AI | Provider abstraction + structured outputs + tools |
-| Knowledge | Verified structured data + retrieval |
-| Storage | S3-compatible object storage |
-| Tests | Vitest + Playwright |
+| Backend ORM | SQLAlchemy 2 Async |
+| Migrations | Alembic |
+| API validation | Pydantic |
+| Auth | JWT/OIDC boundary + RBAC |
+| Cache / jobs | Redis + workers |
+| AI | Provider abstraction + structured outputs |
+| Knowledge | Verified sources + documents + claims |
+| Tests | Pytest + Vitest + Playwright |
 | CI/CD | GitHub Actions |
 
-## Architecture
-
-See:
-- [Folder structure](docs/FOLDER_STRUCTURE.md)
-- [AI-native architecture](docs/AI_NATIVE_ARCHITECTURE.md)
-- [System architecture](docs/ARCHITECTURE.md)
-
-## AI recommendation pipeline
+## Repository structure
 
 ```
-Student Profile
-      ↓
-Hard Eligibility Filters
-      ↓
-Constraints & Preferences
-      ↓
-Deterministic Scoring
-      ↓
-Search / Retrieval
-      ↓
-LLM Reasoning & Explanation
-      ↓
-Structured Recommendation
-      ↓
-Student Approval / Action
+backend/
+  app/
+    api/v1/
+    core/
+    db/
+    models/
+    schemas/
+    services/
+  alembic/
+frontend/
+docs/
+workers/
 ```
 
-The LLM is an intelligence and explanation layer—not the sole source of truth.
+## No dummy data policy
 
-## Local development
+Vira does not ship fake:
+
+- colleges
+- scholarships
+- entrance deadlines
+- eligibility requirements
+- career recommendations
+
+Critical education facts require source provenance and verification.
+
+## Backend local development
 
 ```bash
-git clone https://github.com/LakkuAmulya-2/Vira-ai-.git
-cd Vira-ai-
-npm install
-cp .env.example .env.local
-npm run dev
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .
+cp .env.example .env
+alembic revision --autogenerate -m "initial_schema"
+alembic upgrade head
+uvicorn app.main:app --reload --port 8000
 ```
 
-## Environment
+API documentation is available at:
 
-```env
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-DATABASE_URL=
-DIRECT_URL=
-AUTH_SECRET=
-AI_PROVIDER=
-AI_API_KEY=
-REDIS_URL=
-ERROR_TRACKING_DSN=
+```
+http://localhost:8000/docs
 ```
 
-Never commit real secrets.
+## Next production phases
 
-## Engineering standards
-
-- TypeScript strict mode
-- Zod validation at boundaries
-- domain/service separation
-- thin API routes
-- authorization before data access
-- idempotent jobs
-- structured logs
-- audit trails for autonomous actions
-- unit/integration/E2E tests
-- mobile-first accessibility
-- source freshness for critical education data
-
-## Delivery roadmap
-
-- [x] Product architecture
-- [x] Premium UI foundation
-- [x] Initial onboarding
-- [x] Core documentation
-- [ ] PostgreSQL + Prisma
-- [ ] Authentication + RBAC
-- [ ] Student persistence
-- [ ] Hybrid recommendation engine
-- [ ] Grounded AI copilot
-- [ ] Entrance engine
-- [ ] College fit scoring
-- [ ] Scholarship matching
-- [ ] Autonomous monitoring
-- [ ] CI, observability and security hardening
-
-## North-star experience
-
-A student should be able to say:
-
-> **“I completed 12th. I don't know what to do next.”**
-
-Vira should understand the student, discover options they may never have heard of, verify eligibility, compare trade-offs, surface opportunities before deadlines, and guide the next best action.
+1. Complete FastAPI domain migrations
+2. JWT/OIDC provider integration
+3. Recommendation engine
+4. Knowledge ingestion workers
+5. Admissions, exam and scholarship modules
+6. AI orchestration with grounded retrieval
+7. Observability, rate limiting and CI/CD hardening

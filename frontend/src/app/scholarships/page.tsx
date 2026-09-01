@@ -1,0 +1,2 @@
+import {Explorer} from "../../components/Explorer";import {AppSidebar} from "../../components/AppSidebar";
+export default function Page(){return <div className="workspace-shell"><AppSidebar/><Explorer title="Don't miss funding." subtitle="Discover scholarships and understand eligibility, documents, deadlines and next actions." endpoint="/api/v1/agents/run" placeholder="e.g. scholarships for Indian students in UK masters" empty="Ask Vira to research funding opportunities relevant to your plan."/></div>}

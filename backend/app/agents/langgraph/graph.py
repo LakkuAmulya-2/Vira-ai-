@@ -6,6 +6,8 @@ from app.agents.supervisor import SupervisorAgent
 from app.agents.tools import AgentToolRegistry
 from app.agents.langgraph.state import ViraAgentState
 from app.agents.langgraph.checkpoint import get_checkpointer
+from app.agents.langgraph.policies import assert_tool_allowed
+from app.agents.langgraph.retry import with_retry
 class ViraLangGraph:
  def __init__(self):
   self.supervisor=SupervisorAgent();self.planner=AgentPlanner(self.supervisor);self.tools=AgentToolRegistry();g=StateGraph(ViraAgentState)
@@ -20,10 +22,15 @@ class ViraLangGraph:
   i=s.get("task_index",0);tasks=s.get("tasks",[])
   if i>=len(tasks):return {}
   t=tasks[i];hits=[]
-  for c in t.get("tool_calls",[]):hits.extend((await self.tools.execute(None,t["agent"],c["tool"],c.get("arguments",{}))).get("hits",[]))
-  return {"evidence":[*s.get("evidence",[]),*hits],"trace":self.trace(s,"tools.completed",{"hits":len(hits)})}
+  for c in t.get("tool_calls",[]):
+   assert_tool_allowed(t["agent"],c["tool"])
+   async def execute_call():return await self.tools.execute(None,t["agent"],c["tool"],c.get("arguments",{}))
+   hits.extend((await with_retry(execute_call,attempts=3)).get("hits",[]))
+  return {"evidence":[*s.get("evidence",[]),*hits],"trace":self.trace(s,"tools.completed",{"hits":len(hits),"agent":t["agent"]})}
  async def specialist(self,s):
-  i=s.get("task_index",0);t=s["tasks"][i];r=await self.supervisor.run_agent(AgentName(t["agent"]),AgentRequest(**s["request"]));r.evidence=[x.get("citation",x) for x in s.get("evidence",[])];r=validate_result(r)
+  i=s.get("task_index",0);t=s["tasks"][i]
+  async def run():return await self.supervisor.run_agent(AgentName(t["agent"]),AgentRequest(**s["request"]))
+  r=await with_retry(run,attempts=2);r.evidence=[x.get("citation",x) for x in s.get("evidence",[])];r=validate_result(r)
   return {"results":[*s.get("results",[]),r.model_dump(mode="json")],"task_index":i+1,"trace":self.trace(s,"specialist.completed",{"agent":t["agent"]})}
  async def critic(self,s):
   rows=[AgentResult(**x) for x in s.get("results",[])];review=bool(rows and rows[-1].requires_human_review)

@@ -1,53 +1,9 @@
-from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from app.retrieval.contracts import RetrievalRequest
+from app.retrieval.service import hybrid_search
+from app.tools.knowledge.contracts import KnowledgeEvidence,KnowledgeSearchRequest,KnowledgeSearchResponse
 
-from app.models.knowledge import DataSource, KnowledgeClaim
-from app.tools.knowledge.contracts import KnowledgeEvidence, KnowledgeSearchRequest, KnowledgeSearchResponse
-
-async def search_verified_knowledge(
-    db: AsyncSession, request: KnowledgeSearchRequest
-) -> KnowledgeSearchResponse:
-    terms = [term.strip() for term in request.query.split() if len(term.strip()) >= 2]
-    statement = (
-        select(KnowledgeClaim, DataSource)
-        .join(DataSource, KnowledgeClaim.source_id == DataSource.id)
-        .where(
-            KnowledgeClaim.status == "VERIFIED",
-            DataSource.verification_status == "VERIFIED",
-        )
-    )
-
-    if request.entity_type:
-        statement = statement.where(KnowledgeClaim.entity_type == request.entity_type)
-    if request.country_code:
-        statement = statement.where(KnowledgeClaim.country_code == request.country_code.upper())
-    if request.jurisdiction:
-        statement = statement.where(KnowledgeClaim.jurisdiction == request.jurisdiction)
-
-    if terms:
-        predicates = []
-        for term in terms:
-            pattern = f"%{term}%"
-            predicates.extend([
-                KnowledgeClaim.entity_type.ilike(pattern),
-                KnowledgeClaim.entity_key.ilike(pattern),
-                KnowledgeClaim.field.ilike(pattern),
-            ])
-        statement = statement.where(or_(*predicates))
-
-    rows = (await db.execute(statement.limit(request.limit))).all()
-    evidence = [
-        KnowledgeEvidence(
-            claim_id=claim.id,
-            entity_type=claim.entity_type,
-            entity_key=claim.entity_key,
-            field=claim.field,
-            value=claim.value,
-            source_name=source.name,
-            source_url=source.base_url,
-            country_code=claim.country_code,
-            jurisdiction=claim.jurisdiction,
-        )
-        for claim, source in rows
-    ]
-    return KnowledgeSearchResponse(query=request.query, evidence=evidence, total=len(evidence))
+async def search_verified_knowledge(db:AsyncSession,request:KnowledgeSearchRequest)->KnowledgeSearchResponse:
+    result=await hybrid_search(db,RetrievalRequest(query=request.query,entity_type=request.entity_type,country_code=request.country_code,jurisdiction=request.jurisdiction,limit=request.limit))
+    evidence=[KnowledgeEvidence(claim_id=hit.citation.claim_id or "",entity_type=hit.citation.entity_type,entity_key=hit.citation.entity_key,field=hit.citation.field,value=hit.value,source_name=hit.citation.source_name,source_url=hit.citation.source_url,country_code=hit.citation.country_code,jurisdiction=hit.citation.jurisdiction) for hit in result.hits]
+    return KnowledgeSearchResponse(query=request.query,evidence=evidence,total=len(evidence))

@@ -1,10 +1,12 @@
 from fastapi import APIRouter
-from app.api.v1.routes import admissions,agents,applications,career,chat,college_matching,connectors,data_ingestion,education,ingestion,jobs,journey,knowledge,recommendations,retrieval,scholarships,source_intelligence,sources,student_intelligence,students,tool_search,workflows
+from app.api.v1.routes import admissions,agents,applications,career,chat,college_matching,connectors,data_ingestion,education,ingestion,jobs,journey,knowledge,notifications,proactive,recommendations,retrieval,scholarships,source_intelligence,sources,student_intelligence,students,tool_search,workflows
 api_router=APIRouter()
 api_router.include_router(students.router,prefix="/students",tags=["students"])
 api_router.include_router(student_intelligence.router,prefix="/student-intelligence",tags=["student-intelligence"])
-api_router.include_router(admissions.router,prefix="/admissions",tags=["admissions"])
 api_router.include_router(applications.router,prefix="/applications",tags=["applications"])
+api_router.include_router(notifications.router,prefix="/notifications",tags=["notifications"])
+api_router.include_router(proactive.router,prefix="/proactive",tags=["proactive"])
+api_router.include_router(admissions.router,prefix="/admissions",tags=["admissions"])
 api_router.include_router(career.router,prefix="/career",tags=["career"])
 api_router.include_router(college_matching.router,prefix="/colleges",tags=["college-matching"])
 api_router.include_router(scholarships.router,prefix="/scholarships",tags=["scholarships"])

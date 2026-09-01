@@ -3,6 +3,7 @@ from app.models.student import StudentProfile,StudentInterest,StudentSkill,Caree
 from app.models.student_intelligence import StudentAcademicRecord,StudentConstraint,StudentIntelligenceSnapshot,StudentMemory
 from app.models.application import Application,ApplicationTask,ApplicationDocument,ApplicationEvent
 from app.models.notification import StudentAlert,NotificationPreference
+from app.models.copilot import CopilotConversation,CopilotMessage,CopilotAction
 from app.models.knowledge import DataSource,SourceDocument,KnowledgeClaim
 from app.models.education import Country,Institution,Course,Program,Scholarship,EntranceExam,EducationFact
 from app.models.source_intelligence import SourceProfile,SourceRun

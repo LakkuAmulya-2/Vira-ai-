@@ -1,17 +1,7 @@
 from app.models.base import Base
 from app.models.student import StudentProfile, StudentInterest, StudentSkill, CareerGoal
 from app.models.knowledge import DataSource, SourceDocument, KnowledgeClaim
+from app.models.education import Country, Institution, Course, Program, Scholarship, EntranceExam, EducationFact
 from app.models.recommendation import RecommendationRun, RecommendationItem
-
-__all__ = [
-    "Base",
-    "StudentProfile",
-    "StudentInterest",
-    "StudentSkill",
-    "CareerGoal",
-    "DataSource",
-    "SourceDocument",
-    "KnowledgeClaim",
-    "RecommendationRun",
-    "RecommendationItem",
-]
+from app.models.jobs import BackgroundJob
+__all__=["Base","StudentProfile","StudentInterest","StudentSkill","CareerGoal","DataSource","SourceDocument","KnowledgeClaim","Country","Institution","Course","Program","Scholarship","EntranceExam","EducationFact","RecommendationRun","RecommendationItem","BackgroundJob"]
